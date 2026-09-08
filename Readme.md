@@ -125,11 +125,13 @@ Create a `.env` file inside the backend directory.
 ```env
 PORT=5000
 
-META_VERIFY_TOKEN=leadpoc2026
+META_VERIFY_TOKEN=mysecrettoken123
 
 META_API_VERSION=vXX.X
 
 META_PAGE_ACCESS_TOKEN=YOUR_PAGE_ACCESS_TOKEN
+
+META_LEAD_FORM_ID=YOUR_FORM_ID
 ```
 
 The actual Page Access Token should not be committed to GitHub.
@@ -138,12 +140,17 @@ The verify token used in Meta must match the value configured in:
 
 ```env
 META_VERIFY_TOKEN
+META_API_VERSION=vXX.X ENTER HERE YOUR VERSION
+
+META_PAGE_ACCESS_TOKEN= ENTER HERE YOU ACCESS TOKEN WHICH YOU WILL GET FRON THIS PAGE https://developers.facebook.com/tools/explorer
+
+META_LEAD_FORM_ID= ENTER HERE FORM ID WHICH YOU WILL GO TO THIS LINK https://developers.facebook.com/tools/explorer AND ENTER THIS LINE 1371379969381655/leadgen_forms?fields=id,name AND CLICK SUBMIT YOU WILL GET FORM ID
 ```
 
 For example:
 
 ```env
-META_VERIFY_TOKEN=leadpoc2026
+META_VERIFY_TOKEN=mysecrettoken123
 ```
 
 ---
@@ -540,5 +547,6 @@ This PoC demonstrates a real-time lead delivery pipeline from Meta Lead Ads to a
 The backend handles Meta webhook verification, receives lead events, retrieves lead details through the Meta Graph API, and broadcasts the processed lead using Socket.IO.
 
 The React Native application maintains a live Socket.IO connection and automatically updates the lead list whenever a new lead is received.
-#   a s s i g n e m e n t  
+#   a s s i g n e m e n t 
+ 
  

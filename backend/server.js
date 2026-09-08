@@ -150,6 +150,75 @@ app.post("/webhook", async (req, res) => {
   }
 });
 
+
+const seenLeadIds = new Set();
+let isFirstPoll = true;
+
+async function pollForNewLeads() {
+  const formId = process.env.META_LEAD_FORM_ID;
+
+  if (!formId) {
+    console.log("[POLL] SKIPPED: META_LEAD_FORM_ID not set in .env");
+    return;
+  }
+
+  const url = `https://graph.facebook.com/${process.env.META_API_VERSION}/${formId}/leads`;
+
+  try {
+    const response = await axios.get(url, {
+      params: {
+        access_token: process.env.META_PAGE_ACCESS_TOKEN,
+        fields: "id,created_time,field_data",
+        limit: 25,
+      },
+    });
+
+    const leads = response.data?.data || [];
+    console.log(
+      `[POLL] Checked at ${new Date().toISOString()} - ${leads.length} lead(s) returned`
+    );
+
+    if (isFirstPoll) {
+      leads.forEach((lead) => seenLeadIds.add(lead.id));
+      isFirstPoll = false;
+      console.log(
+        `[POLL] First run - baseline set with ${seenLeadIds.size} existing lead(s), none emitted`
+      );
+      return;
+    }
+
+    for (const metaLead of leads) {
+      if (seenLeadIds.has(metaLead.id)) {
+        continue;
+      }
+      seenLeadIds.add(metaLead.id);
+
+      const fields = metaLead.field_data || [];
+      const getField = (fieldName) => {
+        const field = fields.find((item) => item.name === fieldName);
+        return field?.values?.[0] || "";
+      };
+
+      const lead = {
+        id: metaLead.id,
+        name: getField("full_name"),
+        email: getField("email"),
+        phone: getField("phone_number"),
+        createdAt: metaLead.created_time || new Date().toISOString(),
+      };
+
+      console.log("[POLL] NEW LEAD FOUND, emitting to socket clients:", lead);
+      io.emit("new_lead", lead);
+    }
+  } catch (error) {
+    console.error("[POLL] FAILED:", error.response?.data || error.message);
+  }
+}
+
+const POLL_INTERVAL_MS = 8000;
+setInterval(pollForNewLeads, POLL_INTERVAL_MS);
+pollForNewLeads();
+
 const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, "0.0.0.0", () => {
